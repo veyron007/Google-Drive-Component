@@ -237,6 +237,7 @@ const SelectSource = () => {
       >
         Back
       </Button>
+      
       <Button onClick={() =>handleSignOutClick()} variant = "contained" color="primary">Sign Out</Button>
       {documents.length > 0 ? (
         <Table>
