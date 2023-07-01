@@ -1,5 +1,4 @@
 "use client";
-import dynamic from "next/dynamic";
 import {
   Table,
   TableHead,
@@ -17,24 +16,8 @@ import { gapi } from "gapi-script";
 import { styled } from "@mui/material/styles";
 import { Box, Avatar } from "@mui/material";
 
-// import Image from 'next/image';
 // import GoogleDriveImage from './google-drive.png';
-// import ListDocuments from '../ListDocuments';
-// import { style } from './styles';
 
-// const NewDocumentWrapper = styled.div`
-//   ${style}
-// // `;
-// import {
-//   Box,
-//   Typography,
-//   Button,
-//   table,
-//   tbody,
-//   td,
-//   thead,
-//   tr,
-// } from "@mui/material";
 import Button from "@mui/material/Button";
 
 // Client ID and API key from the Developer Console
@@ -46,8 +29,6 @@ const DISCOVERY_DOCS = [
   "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
 ];
 
-// Authorization scopes required by the API; multiple scopes can be
-// included, separated by spaces.
 const SCOPES = "https://www.googleapis.com/auth/drive.metadata.readonly";
 
 const SelectSource = () => {
@@ -100,7 +81,7 @@ const SelectSource = () => {
   }, [folderId]);
 
   useEffect(() => {
-    // console.log("Hi Varun", parentMap);
+    // console.log(parentMap);
   }, [parentMap]);
 
   const listFolder = () => {
@@ -116,7 +97,7 @@ const SelectSource = () => {
         q: `"${folderId}" in parents`,
       })
       .then(function (response: any) {
-        console.log(response);
+        // console.log(response);
         if (response.status == 200) {
           let obj: keyObject = {};
           for (let i of response.result.files) {
@@ -256,31 +237,7 @@ const SelectSource = () => {
       >
         Back
       </Button>
-      {/* <Button onClick={documents} variant="contained" color="primary"> */}
-      {/* List Files */}
-      {/* </Button> */}
-      {/* {documents.length > 0 ? (
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>MimeType</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.map((document: documentType) => (
-              <tr key={document.id}>
-                <td onClick={() => documentClickHandler(document)}>
-                  {document.name}
-                </td>
-                <td>{document.mimeType}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <div>No files found.</div>
-      )} */}
+      <Button onClick={() =>handleSignOutClick()} variant = "contained" color="primary">Sign Out</Button>
       {documents.length > 0 ? (
         <Table>
           <TableHead>
