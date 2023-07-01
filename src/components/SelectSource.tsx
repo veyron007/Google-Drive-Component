@@ -1,11 +1,22 @@
 "use client";
 import dynamic from "next/dynamic";
+import {
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Typography,
+} from "@mui/material";
 
 // const gapi = dynamic(import('@gapi-script'), { ssr: false })
 import React, { useState, useEffect } from "react";
 // import { Row, Col, Spin } from 'antd';
 // import styled from 'styled-components';
 import { gapi } from "gapi-script";
+import { styled } from "@mui/material/styles";
+import { Box, Avatar } from "@mui/material";
+
 // import Image from 'next/image';
 // import GoogleDriveImage from './google-drive.png';
 // import ListDocuments from '../ListDocuments';
@@ -24,6 +35,7 @@ import { gapi } from "gapi-script";
 //   thead,
 //   tr,
 // } from "@mui/material";
+import Button from "@mui/material/Button";
 
 // Client ID and API key from the Developer Console
 const CLIENT_ID = process.env.REACT_APP_GOOGLE_DRIVE_CLIENT_ID;
@@ -41,13 +53,14 @@ const SCOPES = "https://www.googleapis.com/auth/drive.metadata.readonly";
 const SelectSource = () => {
   const [listDocumentsVisible, setListDocumentsVisibility] = useState(false);
   const [documents, setDocuments] = useState([]);
+  let [videoSource, setVideoSource] = useState<string>("");
 
   const [isLoadingGoogleDriveApi, setIsLoadingGoogleDriveApi] = useState(false);
   const [isFetchingGoogleDriveFiles, setIsFetchingGoogleDriveFiles] =
     useState(false);
   const [signedInUser, setSignedInUser] = useState();
   const handleChange = (file: any) => {
-    console.log(file);
+    // console.log(file);
   };
 
   /**
@@ -69,24 +82,35 @@ const SelectSource = () => {
 
   //         // setDocuments(res.files);
   //       });
+  type keyObject = {
+    [key: string]: any;
+  };
+  const [parentMap, setParentMap] = useState<keyObject>({});
 
   const [folderId, setFolderId] = useState<string | number | undefined>("root");
   const documentClickHandler = (document: documentType) => {
-    setFolderId(document.id);
+    if (document.mimeType == "application/vnd.google-apps.folder") {
+      setFolderId(document.id);
+    } else if (document.mimeType.indexOf("video") != -1) {
+      setVideoSource(document.webContentLink);
+    } else setVideoSource("");
   };
-useEffect(() => {
-    listFolder()
-}, [folderId])
+  useEffect(() => {
+    listFolder();
+  }, [folderId]);
 
+  useEffect(() => {
+    // console.log("Hi Varun", parentMap);
+  }, [parentMap]);
 
   const listFolder = () => {
     // setIsFetchingGoogleDriveFiles(true);
-    if (gapi.client == undefined)
-    return;
+    if (gapi.client == undefined) return;
     gapi.client.drive.files
       .list({
-        pageSize: 100,
-        fields: "files(id, name, mimeType, modifiedTime, parents)",
+        // pageSize: 100,
+        fields:
+          "files(id, name, mimeType, modifiedTime, parents, webContentLink)",
         // q: `"${folder?folder:'root'}" in parents and mimeType = "application/vnd.google-apps.folder"`,
         // q: `"${'root'}" in parents`,
         q: `"${folderId}" in parents`,
@@ -94,10 +118,19 @@ useEffect(() => {
       .then(function (response: any) {
         console.log(response);
         if (response.status == 200) {
+          let obj: keyObject = {};
+          for (let i of response.result.files) {
+            if (i.mimeType == "application/vnd.google-apps.folder") {
+              obj[i.id] = folderId;
+            }
+          }
+          // console.log(obj);
+          obj = { ...parentMap, ...obj };
+          setParentMap(obj);
           setDocuments(response.result.files);
         }
       })
-      .catch((err: any) => {
+      .catch((err: Error) => {
         console.log(err);
       });
   };
@@ -118,7 +151,7 @@ useEffect(() => {
       // Set the signed in user
       //   let a = gapi.auth2.getAuthInstance().currentUser.je.Qt;
       let a = gapi.auth2.getAuthInstance().currentUser.le.wt;
-      console.log(a);
+      // console.log(a);
       //   return;
       setSignedInUser(a);
       setIsLoadingGoogleDriveApi(false);
@@ -179,29 +212,54 @@ useEffect(() => {
     name: string;
     id?: string | number;
     mimeType: string;
+    webContentLink: string;
   }
+  const ContentSpan = styled("span")({
+    display: "inline-block",
+    backgroundColor: "#f5f5f5",
+    padding: "8px 16px",
+    borderRadius: "10px",
+    margin: "20px",
+    cursor: "pointer",
+  });
 
   return (
     <div>
-      <div onClick={() => handleClientLoad()} className="source-container">
-        <div className="icon-container">
-          <div className="icon icon-success">
-            <img height="80" width="80" src="/google-drive.png" />
-          </div>
-        </div>
-        <div className="content-container">
-          <p className="title">Google Drive</p>
-          <span className="content">
-            Import documents straight from your google drive
-          </span>
+      <div>
+        <Box display="flex" justifyContent="center">
+          <img style={{ height: 80, width: 80 }} src="/google-drive.png" />
+        </Box>
+        <div>
+          <Typography variant="h6" component="p">
+            Google Drive
+          </Typography>
+          <Typography
+            onClick={() => handleClientLoad()}
+            variant="body1"
+            component={ContentSpan}
+          >
+            Import documents straight from your Google Drive
+          </Typography>
+          <br />
+          <br />
         </div>
       </div>
-
+      <Button
+        onClick={() => {
+          let parent = parentMap[folderId as keyof typeof parentMap];
+          setFolderId(parent);
+          setVideoSource("");
+        }}
+        disabled={folderId == "root"}
+        variant="contained"
+        color="primary"
+      >
+        Back
+      </Button>
       {/* <Button onClick={documents} variant="contained" color="primary"> */}
       {/* List Files */}
       {/* </Button> */}
-
-      {documents.length > 0 ? (
+      {/* {documents.length > 0 ? (
         <table>
           <thead>
             <tr>
@@ -222,7 +280,42 @@ useEffect(() => {
         </table>
       ) : (
         <div>No files found.</div>
+      )} */}
+      {documents.length > 0 ? (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>File Type</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {documents.map((document: documentType) => (
+              <TableRow
+                key={document.id}
+                onClick={() => documentClickHandler(document)}
+                sx={{ cursor: "pointer" }}
+              >
+                <TableCell>{document.name}</TableCell>
+                <TableCell>{document.mimeType}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <Typography variant="body1" align="center">
+          No files found.
+        </Typography>
       )}
+      <video
+        className={videoSource == "" ? "d-none" : ""}
+        key={videoSource}
+        width="1280"
+        height="720"
+        controls
+      >
+        <source src={videoSource} type="video/mp4" />
+      </video>
     </div>
   );
 };
