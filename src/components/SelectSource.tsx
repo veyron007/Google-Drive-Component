@@ -150,6 +150,8 @@ const SelectSource = () => {
   const handleSignOutClick = () => {
     setListDocumentsVisibility(false);
     gapi.auth2.getAuthInstance().signOut();
+    setVideoSource("");
+    setDocuments([])
   };
 
   /**
@@ -237,8 +239,15 @@ const SelectSource = () => {
       >
         Back
       </Button>
-      
-      <Button onClick={() =>handleSignOutClick()} variant = "contained" color="primary">Sign Out</Button>
+
+      <Button
+        onClick={() => handleSignOutClick()}
+        variant="contained"
+        color="primary"
+        sx={{marginLeft:"20px"}}
+      >
+        Sign Out
+      </Button>
       {documents.length > 0 ? (
         <Table>
           <TableHead>
